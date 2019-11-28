@@ -2,10 +2,6 @@
 # CD to script's dir
 import os
 
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-os.chdir(dname)
-
 # Decide what photo to show
 
 # TODO actual work
@@ -13,8 +9,14 @@ os.chdir(dname)
 # Fetch it
 
 # TODO actual work
-
-img_path = "images/2.png"
+import re
+from os import listdir
+from os.path import isfile, join
+import random
+abspath = os.path.abspath(__file__)
+dname = os.path.join(os.path.dirname(abspath), 'images')
+image_files = [f for f in listdir(dname) if isfile(join(dname, f)) and re.search(r'\.png$', f)]
+img_path = random.choice(image_files)
 
 # Rastesize
 
