@@ -1,4 +1,10 @@
 #!/bin/env python
+# CD to script's dir
+import os
+
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 
 # Decide what photo to show
 
@@ -8,7 +14,7 @@
 
 # TODO actual work
 
-img-path = "images/2.png"
+img_path = "images/2.png"
 
 # Rastesize
 
@@ -19,6 +25,7 @@ img-path = "images/2.png"
 # TODO modify IT class to allow custom pins, so we can drive more than one
 from IT8951.display import AutoEPDDisplay
 from PIL import Image, ImageDraw, ImageFont
+from IT8951 import constants
 
 print('Initializing EPD...')
 display = AutoEPDDisplay(vcom=-2.06)
