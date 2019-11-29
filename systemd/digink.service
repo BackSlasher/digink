@@ -1,0 +1,7 @@
+[Unit]
+Description=DigInk
+
+[Service]
+Type=oneshot
+ExecStart=/home/nitz/digink/venv/bin/python -m digink
+WorkingDirectory=/home/nitz/digink
