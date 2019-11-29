@@ -7,11 +7,13 @@ from IT8951.display import AutoEPDDisplay  # type: ignore
 from IT8951 import constants  # type: ignore
 from PIL import Image, ImageDraw, ImageFont, ImageOps  # type: ignore
 
+
 class Dimensions(NamedTuple):
     start_x: int
     start_y: int
     width: int
     height: int
+
     def mul(self, amount: float) -> Dimensions:
         return Dimensions(
             start_x=int(self.start_x * amount),
@@ -27,7 +29,9 @@ class Screen(NamedTuple):
 
     def draw_image(self, img):
         display = self.display
-        display.frame_buf.paste(0xFF, box=(0, 0, self.display.width, self.display.height))
+        display.frame_buf.paste(
+            0xFF, box=(0, 0, self.display.width, self.display.height)
+        )
         coords = (
             self.start_x,
             self.start_y,
@@ -43,20 +47,30 @@ class ScreenCollection(NamedTuple):
     screens: List[Screen]
 
     def get_physical_overall_size(self) -> Tuple[int, int]:
-        max_width = max([screen.physical_dimensions.width + screen.physical_dimensions.start_x for screen in self.screens])
-        max_height = max([screen.physical_dimensions.height + screen.physical_dimensions.start_y for screen in self.screens])
+        max_width = max(
+            [
+                screen.physical_dimensions.width + screen.physical_dimensions.start_x
+                for screen in self.screens
+            ]
+        )
+        max_height = max(
+            [
+                screen.physical_dimensions.height + screen.physical_dimensions.start_y
+                for screen in self.screens
+            ]
+        )
         max_dims = (max_width, max_height)
         return max_dims
 
-    def draw_image(self, img: PIL.Image) -> None:
+    def draw_image(self, img: Image) -> None:
 
         physical_overall_size = self.get_physical_overall_size()
 
         # 1. Redo the image ratio to fit the physical ratio
         # https://stackoverflow.com/a/4744625
-        ideal_aspect = physical_overall_size[0]/physical_overall_size[1]
-        width,height = img.size
-        aspect = width/height
+        ideal_aspect = physical_overall_size[0] / physical_overall_size[1]
+        width, height = img.size
+        aspect = width / height
         if aspect > ideal_aspect:
             new_width = int(ideal_aspect * height)
             offset = (width - new_width) / 2
@@ -95,12 +109,7 @@ class ScreenCollection(NamedTuple):
 def get_screens() -> ScreenCollection:
     screens = [
         Screen(
-            physical_dimensions=Dimensions(
-                start_x=0,
-                start_y=0,
-                width=12,
-                height=9,
-            ),
+            physical_dimensions=Dimensions(start_x=0, start_y=0, width=12, height=9,),
             display=AutoEPDDisplay(vcom=-2.06),
         )
     ]
