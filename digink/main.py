@@ -1,7 +1,8 @@
 #!/bin/env python
 import os
+import math
 from IT8951.display import AutoEPDDisplay
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from IT8951 import constants
 from typing import NamedTuple
 
@@ -50,6 +51,7 @@ img_path = random.choice(image_files)
 
 
 img = Image.open(img_path)
+width, height = img.size
 
 main_display = AutoEPDDisplay(vcom=-2.06)
 screens = [
@@ -65,10 +67,14 @@ screens = [
 # Get the overall size
 max_width = max([screen.width + screen.start_x for screen in screens])
 max_height = max([screen.height + screen.start_y for screen in screens])
+max_dims = (max_width, max_height)
 
-dims = (max_width, max_height)
+ratio = max(max_width/width, max_height/height)
 
-img.thumbnail(dims)
+dims = (math.trunc(width*ratio), math.trunc(max_height*ratio))
+print("aaaa", (max_width, max_height), img.size, ratio, dims)
+#img = img.resize(dims)
+img = ImageOps.fit(img, max_dims)
 
 # TODO should we reinstate that?
 # paste_coords = [dims[i] - img.size[i] for i in (0,1)]  # align image with bottom of display
