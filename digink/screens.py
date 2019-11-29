@@ -27,18 +27,22 @@ class Screen(NamedTuple):
     display: AutoEPDDisplay
     physical_dimensions: Dimensions
 
-    def draw_image(self, img):
-        display = self.display
-        display.frame_buf.paste(
-            0xFF, box=(0, 0, self.display.width, self.display.height)
-        )
+    def draw_image(self, img: Image, ratio: float):
+        # Get the pixel-correct dimensions
+        pixel_dimensions = self.physical_dimensions.mul(ratio)
+        # Get the image-slice we want
         coords = (
-            self.start_x,
-            self.start_y,
-            self.start_x + self.width,
-            self.start_y + self.height,
+            pixel_dimensions.start_x,
+            pixel_dimensions.start_y,
+            pixel_dimensions.start_x + pixel_dimensions.width,
+            pixel_dimensions.start_y + pixel_dimensions.height,
         )
         screen_part = img.crop(coords)
+
+        # resize the screen part to match the screen's pixel dimensions
+        display = self.display
+        screen_part = screen_part.resize((display.width, display.height))
+        display.frame_buf.paste(0xFF, box=(0, 0, display.width, display.height))
         display.frame_buf.paste(screen_part)
         display.draw_full(constants.DisplayModes.GC16)
 
@@ -62,12 +66,10 @@ class ScreenCollection(NamedTuple):
         max_dims = (max_width, max_height)
         return max_dims
 
-    def draw_image(self, img: Image) -> None:
-
-        physical_overall_size = self.get_physical_overall_size()
-
-        # 1. Redo the image ratio to fit the physical ratio
+    def redo_image_ratio(self, img: Image) -> Image:
+        # TODO extract raw calc to testable function
         # https://stackoverflow.com/a/4744625
+        physical_overall_size = self.get_physical_overall_size()
         ideal_aspect = physical_overall_size[0] / physical_overall_size[1]
         width, height = img.size
         aspect = width / height
@@ -80,7 +82,13 @@ class ScreenCollection(NamedTuple):
             offset = (height - new_height) / 2
             resize = (0, offset, width, height - offset)
 
-        img = img.crop(resize)
+        return img.crop(resize)
+
+    def draw_image(self, img: Image) -> None:
+        # 1. Redo the image ratio to fit the physical ratio
+        img = self.redo_image_ratio(img)
+        # TODO return it in prev function all somehow?
+        physical_overall_size = self.get_physical_overall_size()
 
         # 2. For each screen, choose the right slice of pixels from the main image it should have
         width_ratio = img.size[0] / physical_overall_size[0]
@@ -88,22 +96,7 @@ class ScreenCollection(NamedTuple):
         pixel_ratio = width_ratio
 
         for screen in self.screens:
-            # Get the pixel-correct dimensions
-            pixel_dimensions = screen.physical_dimensions.mul(pixel_ratio)
-            # Get the image-slice we want
-            coords = (
-                pixel_dimensions.start_x,
-                pixel_dimensions.start_y,
-                pixel_dimensions.start_x + pixel_dimensions.width,
-                pixel_dimensions.start_y + pixel_dimensions.height,
-            )
-            screen_part = img.crop(coords)
-            # resize the screen part to match the screen's pixel dimensions
-            display = screen.display
-            screen_part = screen_part.resize((display.width, display.height))
-            display.frame_buf.paste(0xFF, box=(0, 0, display.width, display.height))
-            display.frame_buf.paste(screen_part)
-            display.draw_full(constants.DisplayModes.GC16)
+            screen.draw_image(img, pixel_ratio)
 
 
 def get_screens() -> ScreenCollection:
