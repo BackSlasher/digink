@@ -1,24 +1,30 @@
 #!/bin/env python
 
 from typing import NamedTuple, List, Tuple
-from IT8951.display import AutoEPDDisplay
-from IT8951 import constants
+from IT8951.display import AutoEPDDisplay  # type: ignore
+from IT8951 import constants  # type: ignore
 
-Display = AutoEPDDisplay
+
 class Screen(NamedTuple):
     start_x: int
     start_y: int
     width: int
     height: int
-    display: Display
+    display: AutoEPDDisplay
 
     def draw_image(self, img):
         display = self.display
         display.frame_buf.paste(0xFF, box=(0, 0, self.width, self.height))
-        coords = (self.start_x, self.start_y, self.start_x + self.width, self.start_y + self.height)
+        coords = (
+            self.start_x,
+            self.start_y,
+            self.start_x + self.width,
+            self.start_y + self.height,
+        )
         screen_part = img.crop(coords)
         display.frame_buf.paste(screen_part)
         display.draw_full(constants.DisplayModes.GC16)
+
 
 class ScreenCollection(NamedTuple):
     screens: List[Screen]
@@ -28,7 +34,7 @@ class ScreenCollection(NamedTuple):
         max_height = max([screen.height + screen.start_y for screen in self.screens])
         max_dims = (max_width, max_height)
         return max_dims
-        
+
 
 def get_screens() -> ScreenCollection:
     main_display = AutoEPDDisplay(vcom=-2.06)
@@ -42,6 +48,7 @@ def get_screens() -> ScreenCollection:
         )
     ]
     return ScreenCollection(screens)
+
 
 # Show on screen(s)
 
