@@ -1,6 +1,21 @@
 #!/bin/env python
-# CD to script's dir
 import os
+from IT8951.display import AutoEPDDisplay
+from PIL import Image, ImageDraw, ImageFont
+from IT8951 import constants
+from typing import NamedTuple
+
+
+# types
+Display = AutoEPDDisplay
+class Screen(NamedTuple):
+    start_x: int
+    start_y: int
+    width: int
+    height: int
+    display: Display
+
+# code
 
 # Decide what photo to show
 
@@ -25,21 +40,43 @@ img_path = random.choice(image_files)
 # Show on screen(s)
 
 # TODO modify IT class to allow custom pins, so we can drive more than one
-from IT8951.display import AutoEPDDisplay
-from PIL import Image, ImageDraw, ImageFont
-from IT8951 import constants
+# Current pins:
+#     CS    = 8
+#    HRDY  = 24
+#    RESET = 17
+# SPI 0:
+# https://docs.microsoft.com/en-us/windows/iot-core/learn-about-hardware/pinmappings/pinmappingsrpi
 
-print('Initializing EPD...')
-display = AutoEPDDisplay(vcom=-2.06)
-print('VCOM set to', display.epd.get_vcom())
-display.frame_buf.paste(0xFF, box=(0, 0, display.width, display.height))
+
+
 img = Image.open(img_path)
 
-dims = (display.width, display.height)
+main_display = AutoEPDDisplay(vcom=-2.06)
+screens = [
+    Screen(
+        start_x=0,
+        start_y=0,
+        width=main_display.width,
+        height=main_display.height,
+        display=main_display,
+    )
+]
+
+# Get the overall size
+max_width = max([screen.width + screen.start_x for screen in screens])
+max_height = max([screen.height + screen.start_y for screen in screens])
+
+dims = (max_width, max_height)
 
 img.thumbnail(dims)
-paste_coords = [dims[i] - img.size[i] for i in (0,1)]  # align image with bottom of display
-display.frame_buf.paste(img, paste_coords)
 
-display.draw_full(constants.DisplayModes.GC16)
+# TODO should we reinstate that?
+# paste_coords = [dims[i] - img.size[i] for i in (0,1)]  # align image with bottom of display
 
+for screen in screens:
+    display = screen.display
+    display.frame_buf.paste(0xFF, box=(0, 0, screen.width, screen.height))
+    coords = (screen.start_x, screen.start_y, screen.start_x + screen.width, screen.start_y + screen.height)
+    screen_part = img.crop(coords)
+    display.frame_buf.paste(screen_part)
+    display.draw_full(constants.DisplayModes.GC16)
