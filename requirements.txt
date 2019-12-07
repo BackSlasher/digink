@@ -1,1 +1,1 @@
-https://github.com/GregDMeyer/IT8951/archive/master.zip
+git+https://github.com/BackSlasher/IT8951-1
